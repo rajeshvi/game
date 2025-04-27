@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tic Tac Toe AI</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 40px;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      margin: 20px auto;
+      width: max-content;
+    }
+    .cell {
+      background: #eee;
+      font-size: 48px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      border: 2px solid #333;
+    }
+    .cell.taken {
+      pointer-events: none;
+    }
+    #status {
+      font-size: 24px;
+      margin-top: 20px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Tic Tac Toe </h1>
+<div id="board"></div>
+<div id="status">Your turn (X)</div>
+<button onclick="resetGame()">Reset</button>
+
+<script>
+  const boardElem = document.getElementById("board");
+  const statusElem = document.getElementById("status");
+  let board = Array(9).fill("");
+  let gameOver = false;
+
+  function renderBoard() {
+    boardElem.innerHTML = "";
+    board.forEach((val, i) => {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      if (val) {
+        cell.textContent = val;
+        cell.classList.add("taken");
+      }
+      cell.addEventListener("click", () => playerMove(i));
+      boardElem.appendChild(cell);
+    });
+  }
+
+  function playerMove(index) {
+    if (gameOver || board[index]) return;
+    board[index] = "X";
+    checkGame();
+    if (!gameOver) {
+      setTimeout(aiMove, 200); // brief delay for realism
+    }
+    renderBoard();
+  }
+
+  function aiMove() {
+    const bestMove = minimax(board, "O").index;
+    board[bestMove] = "O";
+    checkGame();
+    renderBoard();
+  }
+
+  function checkGame() {
+    const winner = checkWinner(board);
+    if (winner) {
+      statusElem.textContent = winner === "Tie" ? "It's a tie!" : `Player ${winner} wins!`;
+      gameOver = true;
+    } else {
+      statusElem.textContent = "Your turn (X)";
+    }
+  }
+
+  function checkWinner(b) {
+    const wins = [
+      [0,1,2], [3,4,5], [6,7,8],
+      [0,3,6], [1,4,7], [2,5,8],
+      [0,4,8], [2,4,6]
+    ];
+    for (let [a, b1, c] of wins) {
+      if (b[a] && b[a] === b[b1] && b[a] === b[c]) return b[a];
+    }
+    if (b.every(cell => cell)) return "Tie";
+    return null;
+  }
+
+  function minimax(newBoard, player) {
+    const availSpots = newBoard.map((v, i) => v === "" ? i : null).filter(v => v !== null);
+    const winner = checkWinner(newBoard);
+    if (winner === "X") return { score: -10 };
+    if (winner === "O") return { score: 10 };
+    if (winner === "Tie") return { score: 0 };
+
+    const moves = [];
+
+    for (let i of availSpots) {
+      const move = {};
+      move.index = i;
+      newBoard[i] = player;
+
+      const result = minimax(newBoard, player === "O" ? "X" : "O");
+      move.score = result.score;
+
+      newBoard[i] = "";
+      moves.push(move);
+    }
+
+    let bestMove;
+    if (player === "O") {
+      let bestScore = -Infinity;
+      moves.forEach((m, i) => {
+        if (m.score > bestScore) {
+          bestScore = m.score;
+          bestMove = i;
+        }
+      });
+    } else {
+      let bestScore = Infinity;
+      moves.forEach((m, i) => {
+        if (m.score < bestScore) {
+          bestScore = m.score;
+          bestMove = i;
+        }
+      });
+    }
+
+    return moves[bestMove];
+  }
+
+  function resetGame() {
+    board = Array(9).fill("");
+    gameOver = false;
+    statusElem.textContent = "Your turn (X)";
+    renderBoard();
+  }
+
+  renderBoard();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Connect Four</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+    }
+    table {
+      border-spacing: 5px;
+      margin: 20px auto;
+    }
+    td {
+      width: 60px;
+      height: 60px;
+      background-color: #00aaff;
+      border-radius: 50%;
+      cursor: pointer;
+      position: relative;
+    }
+    .disc {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+    }
+    .red { background-color: red; }
+    .yellow { background-color: yellow; }
+    h2 { margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<h1>Connect Four</h1>
+<h2 id="status">Red's Turn</h2>
+<table id="board"></table>
+
+<script>
+const ROWS = 6;
+const COLS = 7;
+let currentPlayer = "red";
+let board = [];
+
+function createBoard() {
+  const table = document.getElementById("board");
+  for (let r = 0; r < ROWS; r++) {
+    board[r] = [];
+    const row = document.createElement("tr");
+    for (let c = 0; c < COLS; c++) {
+      board[r][c] = null;
+      const cell = document.createElement("td");
+      cell.dataset.col = c;
+      row.appendChild(cell);
+    }
+    table.appendChild(row);
+  }
+}
+
+function getAvailableRow(col) {
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (!board[r][col]) return r;
+  }
+  return null;
+}
+
+function dropDisc(col) {
+  const row = getAvailableRow(col);
+  if (row === null) return;
+
+  board[row][col] = currentPlayer;
+  const cell = document.querySelectorAll("tr")[row].children[col];
+  const disc = document.createElement("div");
+  disc.classList.add("disc", currentPlayer);
+  cell.appendChild(disc);
+
+  if (checkWin(row, col)) {
+    document.getElementById("status").textContent = `${capitalize(currentPlayer)} Wins!`;
+    disableBoard();
+    return;
+  }
+
+  currentPlayer = currentPlayer === "red" ? "yellow" : "red";
+  document.getElementById("status").textContent = `${capitalize(currentPlayer)}'s Turn`;
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function checkDirection(r, c, dr, dc) {
+  let count = 0;
+  let player = board[r][c];
+  for (let i = -3; i <= 3; i++) {
+    const nr = r + i * dr;
+    const nc = c + i * dc;
+    if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && board[nr][nc] === player) {
+      count++;
+      if (count === 4) return true;
+    } else {
+      count = 0;
+    }
+  }
+  return false;
+}
+
+function checkWin(r, c) {
+  return (
+    checkDirection(r, c, 0, 1) ||  // horizontal
+    checkDirection(r, c, 1, 0) ||  // vertical
+    checkDirection(r, c, 1, 1) ||  // diagonal /
+    checkDirection(r, c, 1, -1)    // diagonal \
+  );
+}
+
+function disableBoard() {
+  document.querySelectorAll("td").forEach(td => td.style.pointerEvents = "none");
+}
+
+document.getElementById("board").addEventListener("click", (e) => {
+  const col = e.target.closest("td")?.dataset.col;
+  if (col !== undefined) {
+    dropDisc(Number(col));
+  }
+});
+
+createBoard();
+</script>
+</body>
+</html>

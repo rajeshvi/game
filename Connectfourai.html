@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Connect Four with AI</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Connect Four (You vs AI)</h1>
+  <div id="board"></div>
+  <p id="status"></p>
+  <button onclick="resetGame()">Restart Game</button>
+
+  <script src="script.js"></script>
+<script>
+const ROWS = 6;
+const COLS = 7;
+let board = [];
+let currentPlayer = 'human'; // human = red, AI = yellow
+let gameOver = false;
+
+const boardEl = document.getElementById("board");
+const statusEl = document.getElementById("status");
+
+function createBoard() {
+  board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+  boardEl.innerHTML = "";
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      cell.addEventListener("click", () => {
+        if (!gameOver && currentPlayer === 'human') {
+          playMove(c, 'red');
+        }
+      });
+      boardEl.appendChild(cell);
+    }
+  }
+  statusEl.textContent = "Your turn (Red)";
+}
+
+function playMove(col, color) {
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (!board[r][col]) {
+      board[r][col] = color;
+      updateBoard();
+      if (checkWin(color)) {
+        gameOver = true;
+        statusEl.textContent = `${color === 'red' ? "You" : "AI"} win!`;
+      } else if (isBoardFull()) {
+        gameOver = true;
+        statusEl.textContent = "Draw!";
+      } else {
+        currentPlayer = color === 'red' ? 'ai' : 'human';
+        if (currentPlayer === 'ai') {
+          statusEl.textContent = "AI thinking...";
+          setTimeout(aiTurn, 300);
+        } else {
+          statusEl.textContent = "Your turn (Red)";
+        }
+      }
+      return;
+    }
+  }
+}
+
+function updateBoard() {
+  const cells = document.querySelectorAll(".cell");
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = cells[r * COLS + c];
+      cell.className = "cell";
+      if (board[r][c]) {
+        cell.classList.add(board[r][c]);
+      }
+    }
+  }
+}
+
+function checkWin(color) {
+  // Horizontal, vertical, diagonal check
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS - 3; c++) {
+      if (board[r][c] === color && board[r][c+1] === color && board[r][c+2] === color && board[r][c+3] === color) return true;
+    }
+  }
+  for (let r = 0; r < ROWS - 3; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (board[r][c] === color && board[r+1][c] === color && board[r+2][c] === color && board[r+3][c] === color) return true;
+    }
+  }
+  for (let r = 0; r < ROWS - 3; r++) {
+    for (let c = 0; c < COLS - 3; c++) {
+      if (board[r][c] === color && board[r+1][c+1] === color && board[r+2][c+2] === color && board[r+3][c+3] === color) return true;
+    }
+    for (let c = 3; c < COLS; c++) {
+      if (board[r][c] === color && board[r+1][c-1] === color && board[r+2][c-2] === color && board[r+3][c-3] === color) return true;
+    }
+  }
+  return false;
+}
+
+function isBoardFull() {
+  return board[0].every(cell => cell !== null);
+}
+
+function aiTurn() {
+  const bestCol = findBestMove(board, 4); // depth 4
+  playMove(bestCol, 'yellow');
+}
+
+// ===== AI Logic =====
+
+function evaluate(board) {
+  return Math.random(); // Placeholder: replace with proper scoring
+}
+
+function findBestMove(board, depth) {
+  let bestScore = -Infinity;
+  let bestCol = 0;
+
+  for (let col = 0; col < COLS; col++) {
+    const row = getAvailableRow(board, col);
+    if (row !== -1) {
+      const tempBoard = board.map(row => row.slice());
+      tempBoard[row][col] = 'yellow';
+      const score = minimax(tempBoard, depth - 1, false, -Infinity, Infinity);
+      if (score > bestScore) {
+        bestScore = score;
+        bestCol = col;
+      }
+    }
+  }
+  return bestCol;
+}
+
+function minimax(board, depth, isMaximizing, alpha, beta) {
+  if (depth === 0 || isBoardFull() || checkWin('red') || checkWin('yellow')) {
+    return evaluate(board);
+  }
+
+  if (isMaximizing) {
+    let maxEval = -Infinity;
+    for (let col = 0; col < COLS; col++) {
+      const row = getAvailableRow(board, col);
+      if (row !== -1) {
+        const newBoard = board.map(r => r.slice());
+        newBoard[row][col] = 'yellow';
+        const eval = minimax(newBoard, depth - 1, false, alpha, beta);
+        maxEval = Math.max(maxEval, eval);
+        alpha = Math.max(alpha, eval);
+        if (beta <= alpha) break;
+      }
+    }
+    return maxEval;
+  } else {
+    let minEval = Infinity;
+    for (let col = 0; col < COLS; col++) {
+      const row = getAvailableRow(board, col);
+      if (row !== -1) {
+        const newBoard = board.map(r => r.slice());
+        newBoard[row][col] = 'red';
+        const eval = minimax(newBoard, depth - 1, true, alpha, beta);
+        minEval = Math.min(minEval, eval);
+        beta = Math.min(beta, eval);
+        if (beta <= alpha) break;
+      }
+    }
+    return minEval;
+  }
+}
+
+function getAvailableRow(board, col) {
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (!board[r][col]) return r;
+  }
+  return -1;
+}
+
+function resetGame() {
+  gameOver = false;
+  currentPlayer = 'human';
+  createBoard();
+}
+
+createBoard();
+</script>
+<style>
+body {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  background: #f0f8ff;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(7, 60px);
+  grid-template-rows: repeat(6, 60px);
+  gap: 5px;
+  justify-content: center;
+  margin: 20px auto;
+}
+
+.cell {
+  width: 60px;
+  height: 60px;
+  background-color: #87cefa;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0;
+  cursor: pointer;
+}
+
+.cell.red { background-color: red; }
+.cell.yellow { background-color: yellow; }
+
+#status {
+  font-size: 18px;
+  margin-top: 10px;
+}
+</style>
+</body>
+</html>

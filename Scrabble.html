@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Scrabble Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Scrabble (Basic)</h1>
+  <div id="rack"></div>
+  <div id="board"></div>
+  <button onclick="shuffleRack()">Shuffle Rack</button>
+  <script src="script.js"></script>
+<script>
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+let rackLetters = [];
+const rack = document.getElementById("rack");
+const board = document.getElementById("board");
+
+function getRandomLetter() {
+  return letters[Math.floor(Math.random() * letters.length)];
+}
+
+function generateRack() {
+  rackLetters = [];
+  rack.innerHTML = "";
+  for (let i = 0; i < 7; i++) {
+    const letter = getRandomLetter();
+    rackLetters.push(letter);
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.textContent = letter;
+    tile.draggable = true;
+    tile.addEventListener("dragstart", handleDragStart);
+tile.addEventListener("click", handleDragStart);
+    rack.appendChild(tile);
+  }
+}
+
+function buildBoard() {
+  for (let i = 0; i < 225; i++) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.dataset.index = i;
+    cell.addEventListener("dragover", e => e.preventDefault());
+    cell.addEventListener("drop", handleDrop);
+cell.addEventListener("click", handleDrop);
+    board.appendChild(cell);
+  }
+}
+
+let draggedTile = null;
+
+function handleDragStart(e) {
+  draggedTile = e.target;
+}
+
+function handleDrop(e) {
+  if (draggedTile) {
+    e.target.textContent = draggedTile.textContent;
+    draggedTile.remove(); // Remove from rack
+    draggedTile = null;
+  }
+}
+
+function shuffleRack() {
+  generateRack();
+}
+
+generateRack();
+buildBoard();
+</script>
+<style>
+body {
+  font-family: sans-serif;
+  text-align: center;
+  background: #f4f4f4;
+}
+
+#rack {
+  display: flex;
+  justify-content: center;
+  margin: 10px;
+}
+
+.tile {
+  width: 40px;
+  height: 40px;
+  margin: 5px;
+  background: #f1c40f;
+  border: 1px solid #aaa;
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 40px;
+  text-align: center;
+  cursor: grab;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(15, 40px);
+  grid-template-rows: repeat(15, 40px);
+  gap: 1px;
+  justify-content: center;
+  margin: 20px auto;
+}
+
+.cell {
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border: 1px solid #ccc;
+}
+</style>
+</body>
+</html>

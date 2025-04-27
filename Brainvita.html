@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Brainvita AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Brainvita with AI</h1>
+  <div id="board"></div>
+  <button onclick="aiMove()">AI Move</button>
+  <script src="script.js"></script>
+<script>
+const board = document.getElementById("board");
+
+let state = Array(7).fill().map(() => Array(7).fill(null));
+let selected = null;
+
+function initBoard() {
+  board.innerHTML = "";
+  for (let r = 0; r < 7; r++) {
+    for (let c = 0; c < 7; c++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+
+      if ((r < 2 || r > 4) && (c < 2 || c > 4)) {
+        state[r][c] = null;
+        cell.classList.add("invalid");
+      } else {
+        state[r][c] = 1;
+        const peg = document.createElement("div");
+        peg.classList.add("peg");
+        cell.appendChild(peg);
+      }
+
+      if (r === 3 && c === 3) {
+        state[r][c] = 0;
+        cell.innerHTML = '';
+        cell.classList.add("empty");
+      }
+
+      cell.addEventListener("click", handleCellClick);
+      board.appendChild(cell);
+    }
+  }
+}
+
+function handleCellClick(e) {
+  const r = +e.currentTarget.dataset.row;
+  const c = +e.currentTarget.dataset.col;
+
+  if ((r < 2 || r > 4) && (c < 2 || c > 4)) return;
+
+  if (selected) {
+    const [sr, sc] = selected;
+    if (isValidMove(sr, sc, r, c)) {
+      makeMove(sr, sc, r, c);
+      selected = null;
+      renderBoard();
+    } else {
+      selected = null;
+    }
+  } else {
+    if (state[r][c] === 1) {
+      selected = [r, c];
+    }
+  }
+}
+
+function isValidMove(r1, c1, r2, c2) {
+  const dr = r2 - r1;
+  const dc = c2 - c1;
+
+  if (Math.abs(dr) === 2 && dc === 0) {
+    const mr = r1 + dr / 2;
+    return state[r2][c2] === 0 && state[mr][c1] === 1;
+  }
+  if (Math.abs(dc) === 2 && dr === 0) {
+    const mc = c1 + dc / 2;
+    return state[r2][c2] === 0 && state[r1][mc] === 1;
+  }
+  return false;
+}
+
+function makeMove(r1, c1, r2, c2) {
+  const mr = (r1 + r2) / 2;
+  const mc = (c1 + c2) / 2;
+  state[r1][c1] = 0;
+  state[mr][mc] = 0;
+  state[r2][c2] = 1;
+}
+
+function renderBoard() {
+  [...board.children].forEach(cell => {
+    const r = +cell.dataset.row;
+    const c = +cell.dataset.col;
+    cell.innerHTML = "";
+    cell.classList.remove("empty");
+
+    if ((r < 2 || r > 4) && (c < 2 || c > 4)) return;
+
+    if (state[r][c] === 1) {
+      const peg = document.createElement("div");
+      peg.classList.add("peg");
+      cell.appendChild(peg);
+    } else {
+      cell.classList.add("empty");
+    }
+  });
+}
+
+// ===== AI SECTION =====
+
+function aiMove() {
+  const pegCount = countPegs(state);
+  let depth;
+
+  if (pegCount > 28) depth = 1;
+  else if (pegCount > 20) depth = 2;
+  else if (pegCount > 12) depth = 3;
+  else depth = 4;
+
+  const result = minimax(cloneBoard(state), depth, true);
+  if (!result.move) {
+    alert("No more moves!");
+    return;
+  }
+
+  makeMoveOnBoard(state, ...result.move);
+  renderBoard();
+}
+
+function minimax(state, depth, maximizingPlayer) {
+  if (depth === 0) return { score: evaluateBoard(state) };
+
+  const moves = getAllValidMoves(state);
+  if (moves.length === 0) return { score: evaluateBoard(state) };
+
+  let best = maximizingPlayer ? { score: -Infinity } : { score: Infinity };
+
+  for (let move of moves) {
+    const newState = cloneBoard(state);
+    makeMoveOnBoard(newState, ...move);
+
+    const result = minimax(newState, depth - 1, maximizingPlayer);
+
+    if (maximizingPlayer) {
+      if (result.score > best.score) best = { score: result.score, move };
+    } else {
+      if (result.score < best.score) best = { score: result.score, move };
+    }
+  }
+
+  return best;
+}
+
+function evaluateBoard(state) {
+  let pegCount = 0;
+  let mobility = getAllValidMoves(state).length;
+  let positionalScore = 0;
+
+  for (let r = 0; r < 7; r++) {
+    for (let c = 0; c < 7; c++) {
+      if (state[r][c] === 1) {
+        pegCount++;
+        positionalScore += positionWeights[r][c];
+      }
+    }
+  }
+
+  return -pegCount * 10 + positionalScore + mobility * 2;
+}
+
+function getAllValidMoves(boardState) {
+  const moves = [];
+  const directions = [[-2, 0], [2, 0], [0, -2], [0, 2]];
+
+  for (let r = 0; r < 7; r++) {
+    for (let c = 0; c < 7; c++) {
+      if (boardState[r][c] === 1) {
+        for (let [dr, dc] of directions) {
+          const nr = r + dr;
+          const nc = c + dc;
+          const mr = r + dr / 2;
+          const mc = c + dc / 2;
+          if (
+            nr >= 0 && nr < 7 && nc >= 0 && nc < 7 &&
+            boardState[nr][nc] === 0 && boardState[mr][mc] === 1
+          ) {
+            moves.push([r, c, nr, nc]);
+          }
+        }
+      }
+    }
+  }
+
+  return moves;
+}
+
+function makeMoveOnBoard(board, r1, c1, r2, c2) {
+  const mr = (r1 + r2) / 2;
+  const mc = (c1 + c2) / 2;
+  board[r1][c1] = 0;
+  board[mr][mc] = 0;
+  board[r2][c2] = 1;
+}
+
+function cloneBoard(boardState) {
+  return boardState.map(row => [...row]);
+}
+
+function countPegs(state) {
+  let count = 0;
+  for (let r = 0; r < 7; r++) {
+    for (let c = 0; c < 7; c++) {
+      if (state[r][c] === 1) count++;
+    }
+  }
+  return count;
+}
+
+const positionWeights = [
+  [ 0,  0,  1,  2,  1,  0,  0],
+  [ 0,  1,  2,  3,  2,  1,  0],
+  [ 1,  2,  3,  4,  3,  2,  1],
+  [ 2,  3,  4,  5,  4,  3,  2],
+  [ 1,  2,  3,  4,  3,  2,  1],
+  [ 0,  1,  2,  3,  2,  1,  0],
+  [ 0,  0,  1,  2,  1,  0,  0]
+];
+
+
+
+initBoard();
+</script>
+<style>
+#board {
+  display: grid;
+  grid-template-columns: repeat(7, 50px);
+  grid-gap: 5px;
+  margin: 20px auto;
+  width: max-content;
+}
+
+.cell {
+  width: 50px;
+  height: 50px;
+  background-color: lightgray;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.peg {
+  background-color: green;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.empty {
+  background-color: white;
+}
+
+.invalid {
+  background-color: transparent;
+}
+</style>
+</body>
+</html>

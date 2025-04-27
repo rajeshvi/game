@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ludo Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Ludo Game</h1>
+  <div id="board"></div>
+  <button onclick="rollDice()">Roll Dice</button>
+  <p id="diceResult">Dice: ?</p>
+  <script src="script.js"></script>
+<script>
+const board = document.getElementById("board");
+const diceResult = document.getElementById("diceResult");
+
+let redPos = 0;
+let greenPos = 0;
+let turn = "red";
+let dice = 0;
+
+function createBoard() {
+  for (let i = 0; i < 25; i++) {
+    const cell = document.createElement("div");
+    cell.classList.add("cell");
+    cell.id = "cell-" + i;
+    board.appendChild(cell);
+  }
+}
+
+function drawTokens() {
+  document.querySelectorAll(".token").forEach(t => t.remove());
+
+  if (redPos >= 0 && redPos < 25) {
+    const red = document.createElement("div");
+    red.className = "token red";
+    document.getElementById("cell-" + redPos).appendChild(red);
+  }
+
+  if (greenPos >= 0 && greenPos < 25) {
+    const green = document.createElement("div");
+    green.className = "token green";
+    document.getElementById("cell-" + greenPos).appendChild(green);
+  }
+}
+
+function rollDice() {
+  dice = Math.floor(Math.random() * 6) + 1;
+  diceResult.textContent = `Dice: ${dice}`;
+
+  if (turn === "red") {
+    redPos += dice;
+    if (redPos >= 25) redPos = 24;
+    turn = "green";
+  } else {
+    greenPos += dice;
+    if (greenPos >= 25) greenPos = 24;
+    turn = "red";
+  }
+
+  drawTokens();
+
+  if (redPos === 24) alert("Red wins!");
+  if (greenPos === 24) alert("Green wins!");
+}
+
+createBoard();
+drawTokens();
+</script>
+<style>
+body {
+  font-family: sans-serif;
+  text-align: center;
+  background: #f5f5f5;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(5, 60px);
+  grid-template-rows: repeat(5, 60px);
+  gap: 2px;
+  margin: 20px auto;
+  width: 310px;
+  height: 310px;
+  background: #ccc;
+  position: relative;
+}
+
+.cell {
+  background: white;
+  border: 1px solid #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.token {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.red { background: red; }
+.green { background: green; }
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+}
+</style>
+</body>
+</html>

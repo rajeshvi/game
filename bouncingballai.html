@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bouncing Ball Game</title>
+  <style>
+    body {
+      margin: 0;
+      background: #222;
+      color: white;
+      text-align: center;
+      font-family: sans-serif;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 2px solid #555;
+      background: #111;
+    }
+  </style>
+</head>
+<body>
+  <h1>Bouncing Ball Game</h1>
+  <canvas id="gameCanvas" width="600" height="400"></canvas>
+  <p>Move the paddle with your mouse or arrow keys. Don't let the ball fall!</p>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const ball = {
+      x: canvas.width / 2,
+      y: canvas.height - 30,
+      dx: 3,
+      dy: -3,
+      radius: 10
+    };
+
+    const paddle = {
+      width: 100,
+      height: 10,
+      x: canvas.width / 2 - 50,
+      y: canvas.height - 10,
+      speed: 7,
+      rightPressed: false,
+      leftPressed: false
+    };
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "ArrowRight") paddle.rightPressed = true;
+      else if (e.key === "ArrowLeft") paddle.leftPressed = true;
+    });
+
+    document.addEventListener("keyup", e => {
+      if (e.key === "ArrowRight") paddle.rightPressed = false;
+      else if (e.key === "ArrowLeft") paddle.leftPressed = false;
+    });
+
+    canvas.addEventListener("mousemove", e => {
+      const relativeX = e.clientX - canvas.offsetLeft;
+      if (relativeX > 0 && relativeX < canvas.width) {
+        paddle.x = relativeX - paddle.width / 2;
+      }
+    });
+
+    function drawBall() {
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fillStyle = "red";
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function drawPaddle() {
+      ctx.beginPath();
+      ctx.rect(paddle.x, paddle.y - paddle.height, paddle.width, paddle.height);
+      ctx.fillStyle = "white";
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBall();
+      drawPaddle();
+
+      // Ball movement
+      ball.x += ball.dx;
+      ball.y += ball.dy;
+
+      // Bounce off walls
+      if (ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) {
+        ball.dx = -ball.dx;
+      }
+      if (ball.y + ball.dy < ball.radius) {
+        ball.dy = -ball.dy;
+      }
+
+      // Paddle collision
+      if (
+        ball.y + ball.dy > paddle.y - paddle.height &&
+        ball.x > paddle.x &&
+        ball.x < paddle.x + paddle.width
+      ) {
+        ball.dy = -ball.dy;
+      } else if (ball.y + ball.dy > canvas.height - ball.radius) {
+        alert("Game Over!");
+        document.location.reload();
+      }
+
+      // Paddle movement
+      if (paddle.rightPressed && paddle.x < canvas.width - paddle.width) {
+        paddle.x += paddle.speed;
+      }
+      if (paddle.leftPressed && paddle.x > 0) {
+        paddle.x -= paddle.speed;
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+canvas.addEventListener("touchmove", function(e) {
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const touchX = touch.clientX - rect.left;
+
+  if (touchX > 0 && touchX < canvas.width) {
+    paddle.x = touchX - paddle.width / 2;
+  }
+
+  e.preventDefault(); // Prevent scrolling while playing
+}, { passive: false });
+
+    draw();
+  </script>
+</body>
+</html>

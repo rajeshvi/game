@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bubble Shooter</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Bubble Shooter</h1>
+  <div id="game">
+    <canvas id="canvas" width="480" height="640"></canvas>
+  </div>
+  <script src="script.js"></script>
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const bubbleRadius = 20;
+const colors = ["red", "green", "blue", "orange", "purple"];
+const bubbles = [];
+let shooter = { x: 240, y: 600, color: randomColor(), angle: 90 };
+
+function randomColor() {
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
+// Initialize top rows
+function initBubbles() {
+  bubbles.length = 0;
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 8; col++) {
+      let x = col * bubbleRadius * 2 + bubbleRadius;
+      let y = row * bubbleRadius * 2 + bubbleRadius;
+      bubbles.push({ x, y, color: randomColor() });
+    }
+  }
+}
+
+// Draw all bubbles and shooter
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let bubble of bubbles) {
+    drawBubble(bubble.x, bubble.y, bubble.color);
+  }
+
+  drawBubble(shooter.x, shooter.y, shooter.color);
+}
+
+// Draw single bubble
+function drawBubble(x, y, color) {
+  ctx.beginPath();
+  ctx.arc(x, y, bubbleRadius, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.strokeStyle = "black";
+  ctx.stroke();
+  ctx.closePath();
+}
+
+// Launch bubble on click
+canvas.addEventListener("click", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  const clickY = e.clientY - rect.top;
+
+  const angle = Math.atan2(shooter.y - clickY, clickX - shooter.x);
+  shootBubble(angle);
+});
+
+function shootBubble(angle) {
+  let x = shooter.x;
+  let y = shooter.y;
+  const speed = 5;
+  const dx = speed * Math.cos(angle);
+  const dy = -speed * Math.sin(angle);
+  const color = shooter.color;
+
+  const move = setInterval(() => {
+    x += dx;
+    y += dy;
+
+    // Bounce off walls
+    if (x < bubbleRadius || x > canvas.width - bubbleRadius) {
+      x -= dx;
+      angle = Math.PI - angle;
+    }
+
+    // Collision with top
+    if (y < bubbleRadius) {
+      stop();
+    }
+
+    // Collision with other bubbles
+    for (let b of bubbles) {
+      const dist = Math.hypot(b.x - x, b.y - y);
+      if (dist < bubbleRadius * 2) {
+        stop();
+        break;
+      }
+    }
+
+    function stop() {
+      clearInterval(move);
+      bubbles.push({ x, y, color });
+      shooter.color = randomColor();
+    }
+
+    draw();
+
+    // Draw moving bubble
+    drawBubble(x, y, color);
+  }, 16);
+}
+
+function gameLoop() {
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+initBubbles();
+gameLoop();
+</script>
+<style>
+body {
+  text-align: center;
+  font-family: sans-serif;
+  background-color: #e1f5fe;
+}
+
+#game {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+canvas {
+  border: 2px solid #0288d1;
+  background-color: #ffffff;
+}
+</style>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Number Arrangement Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>Number Arrangement Puzzle</h1>
+
+  <div class="game-container">
+    </div>
+
+  <button id="shuffle-button">Shuffle</button>
+  <button id="reset-button">Reset</button>
+
+  <script src="script.js"></script>
+<script>
+const gameContainer = document.querySelector('.game-container');
+const shuffleButton = document.getElementById('shuffle-button');
+const resetButton = document.getElementById('reset-button');
+let tiles = [];
+const gridSize = 15; // You can change the number of tiles (e.g., 8, 15)
+
+function createTiles() {
+  tiles = Array.from({ length: gridSize }, (_, i) => i + 1);
+  renderTiles();
+}
+
+function renderTiles() {
+  gameContainer.innerHTML = '';
+  tiles.forEach(number => {
+    const tile = document.createElement('div');
+    tile.classList.add('tile');
+    tile.textContent = number;
+    tile.dataset.value = number; // Store the number for checking order
+    tile.addEventListener('click', moveTile); // Implement this function
+    gameContainer.appendChild(tile);
+  });
+  // For a sliding puzzle, you'd typically have one empty tile:
+  // const emptyTile = document.createElement('div');
+  // emptyTile.classList.add('tile', 'empty');
+  // tiles.push(0); // Represent empty tile with 0 or null
+  // gameContainer.appendChild(emptyTile);
+}
+
+function shuffleTiles() {
+  // Basic Fisher-Yates shuffle algorithm
+  for (let i = tiles.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+  }
+  renderTiles();
+}
+
+function resetTiles() {
+  createTiles(); // This will create tiles in the correct order
+}
+
+function moveTile(event) {
+  const clickedTile = event.target;
+  // Implement logic here to move tiles (e.g., for a sliding puzzle)
+  // This would involve finding the empty tile and checking if the clicked
+  // tile is adjacent to it. If so, swap their positions in the 'tiles' array
+  // and then call renderTiles() to update the display.
+
+  // For a simple sorting game where you just click to try and order,
+  // you might implement a different interaction here, like selecting
+  // tiles to swap with each other.
+  console.log('Tile clicked:', clickedTile.textContent);
+}
+
+function checkWin() {
+  // Implement logic to check if the tiles are in the correct order
+  const currentOrder = tiles.map(tile => parseInt(tile.dataset.value) || 0); // Get the numbers
+  const correctOrder = Array.from({ length: gridSize }, (_, i) => i + 1);
+  // If you have an empty tile (represented by 0 or null), adjust correctOrder
+  // to include it at the end.
+
+  if (JSON.stringify(currentOrder) === JSON.stringify(correctOrder)) {
+    alert('You won!');
+  }
+}
+
+shuffleButton.addEventListener('click', shuffleTiles);
+resetButton.addEventListener('click', resetTiles);
+
+// Initialize the game
+createTiles();
+shuffleTiles(); // Start with a shuffled puzzle
+
+</script>
+<style>
+body {
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Adjust for the number of tiles */
+  grid-gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tile {
+  width: 80px;
+  height: 80px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  cursor: pointer;
+  user-select: none; /* Prevent text selection on click */
+}
+
+.tile.empty {
+  background-color: #ddd;
+  border: 1px dashed #aaa;
+  font-size: 0; /* Hide the number for the empty tile */
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+</style>
+</body>
+</html>

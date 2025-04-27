@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Brainvita Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Brainvita (Peg Solitaire)</h1>
+  <div id="board"></div>
+  <button onclick="resetGame()">Reset</button>
+  <script src="script.js"></script>
+<script>
+const board = document.getElementById("board");
+
+let state = [];
+let selected = null;
+
+function createBoard() {
+  state = Array(7).fill().map(() => Array(7).fill(null));
+  board.innerHTML = "";
+
+  for (let r = 0; r < 7; r++) {
+    for (let c = 0; c < 7; c++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+
+      if ((r < 2 || r > 4) && (c < 2 || c > 4)) {
+        state[r][c] = null;
+        cell.classList.add("invalid");
+      } else {
+        state[r][c] = 1;
+        cell.innerHTML = '<div class="peg"></div>';
+      }
+
+      if (r === 3 && c === 3) {
+        state[r][c] = 0;
+        cell.innerHTML = '';
+        cell.classList.add("empty");
+      }
+
+      cell.addEventListener("click", handleClick);
+      board.appendChild(cell);
+    }
+  }
+}
+
+function handleClick(e) {
+  const r = parseInt(e.currentTarget.dataset.row);
+  const c = parseInt(e.currentTarget.dataset.col);
+
+  if (selected) {
+    const [sr, sc] = selected;
+    if (isValidMove(sr, sc, r, c)) {
+      makeMove(sr, sc, r, c);
+      selected = null;
+    } else {
+      selected = null;
+    }
+    render();
+  } else {
+    if (state[r][c] === 1) {
+      selected = [r, c];
+    }
+  }
+}
+
+function isValidMove(r1, c1, r2, c2) {
+  const dr = r2 - r1;
+  const dc = c2 - c1;
+
+  if (Math.abs(dr) === 2 && dc === 0) {
+    const mid = r1 + dr / 2;
+    return state[r2][c2] === 0 && state[mid][c1] === 1;
+  }
+  if (Math.abs(dc) === 2 && dr === 0) {
+    const mid = c1 + dc / 2;
+    return state[r2][c2] === 0 && state[r1][mid] === 1;
+  }
+  return false;
+}
+
+function makeMove(r1, c1, r2, c2) {
+  const mr = (r1 + r2) / 2;
+  const mc = (c1 + c2) / 2;
+  state[r1][c1] = 0;
+  state[mr][mc] = 0;
+  state[r2][c2] = 1;
+}
+
+function render() {
+  const cells = board.children;
+  let index = 0;
+  for (let r = 0; r < 7; r++) {
+    for (let c = 0; c < 7; c++) {
+      const cell = cells[index++];
+      cell.innerHTML = "";
+      cell.classList.remove("empty");
+
+      if ((r < 2 || r > 4) && (c < 2 || c > 4)) continue;
+
+      if (state[r][c] === 1) {
+        cell.innerHTML = '<div class="peg"></div>';
+      } else {
+        cell.classList.add("empty");
+      }
+    }
+  }
+}
+
+function resetGame() {
+  createBoard();
+}
+
+createBoard();
+</script>
+<style>
+body {
+  text-align: center;
+  font-family: sans-serif;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(7, 60px);
+  grid-gap: 5px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.cell {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: lightgray;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.peg {
+  background-color: green;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.empty {
+  background-color: white;
+}
+
+.invalid {
+  background-color: transparent;
+  cursor: default;
+}
+</style>
+</body>
+</html>

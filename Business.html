@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Business Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Business Game</h1>
+  <div id="board"></div>
+  <button onclick="rollDice()">Roll Dice</button>
+  <p id="status">Click "Roll Dice" to start!</p>
+  <script src="script.js"></script>
+<script>
+const board = document.getElementById("board");
+const status = document.getElementById("status");
+
+const properties = Array.from({ length: 25 }, (_, i) => ({
+  name: `Prop ${i + 1}`,
+  owner: null,
+  price: 100 + i * 10
+}));
+
+let position = 0;
+let money = 1000;
+
+function buildBoard() {
+  board.innerHTML = "";
+  for (let i = 0; i < 25; i++) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.id = `cell-${i}`;
+    cell.innerHTML = properties[i].name;
+    board.appendChild(cell);
+  }
+  updatePlayer();
+}
+
+function updatePlayer() {
+  document.querySelectorAll(".player").forEach(p => p.remove());
+  const playerToken = document.createElement("div");
+  playerToken.className = "player";
+  document.getElementById(`cell-${position}`).appendChild(playerToken);
+}
+
+function rollDice() {
+  const roll = Math.floor(Math.random() * 6) + 1;
+  position = (position + roll) % 25;
+  updatePlayer();
+  handleLanding();
+}
+
+function handleLanding() {
+  const prop = properties[position];
+  if (!prop.owner) {
+    if (money >= prop.price) {
+      prop.owner = "You";
+      money -= prop.price;
+      status.textContent = `You bought ${prop.name} for $${prop.price}. Remaining: $${money}`;
+    } else {
+      status.textContent = `You landed on ${prop.name}, but can't afford it.`;
+    }
+  } else {
+    status.textContent = `You landed on your own property (${prop.name}).`;
+  }
+}
+
+buildBoard();
+</script>
+<style>
+body {
+  font-family: sans-serif;
+  text-align: center;
+  background: #f0f0f0;
+}
+
+#board {
+  display: grid;
+  grid-template-columns: repeat(5, 80px);
+  grid-template-rows: repeat(5, 80px);
+  gap: 2px;
+  margin: 20px auto;
+  width: 410px;
+}
+
+.cell {
+  background: #eee;
+  border: 1px solid #aaa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  font-size: 12px;
+  padding: 4px;
+}
+
+.player {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background: red;
+  border-radius: 50%;
+}
+</style>
+</body>
+</html>

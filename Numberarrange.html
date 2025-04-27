@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Number Arrange Game</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Number Arrange Game</h1>
+    <div id="grid" class="grid"></div>
+    <button onclick="shuffleNumbers()">Shuffle</button>
+    <p id="message"></p>
+  </div>
+  <script src="script.js"></script>
+<script>
+let numbers = [];
+let selectedIndex = null;
+
+function createGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  numbers.forEach((number, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.textContent = number;
+    tile.onclick = () => handleTileClick(i);
+    grid.appendChild(tile);
+  });
+}
+
+function shuffleNumbers() {
+  numbers = [...Array(9).keys()].map(x => x + 1);
+  for (let i = numbers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+  }
+  selectedIndex = null;
+  document.getElementById('message').textContent = '';
+  createGrid();
+}
+
+function handleTileClick(index) {
+  if (selectedIndex === null) {
+    selectedIndex = index;
+  } else {
+    [numbers[selectedIndex], numbers[index]] = [numbers[index], numbers[selectedIndex]];
+    selectedIndex = null;
+    createGrid();
+    checkWin();
+  }
+}
+
+function checkWin() {
+  const isSorted = numbers.every((val, i) => val === i + 1);
+  if (isSorted) {
+    document.getElementById('message').textContent = 'You Win!';
+  }
+}
+
+// Initialize
+shuffleNumbers();
+</script>
+<style>
+body {
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #f0f0f0;
+  margin: 0;
+}
+
+.game-container {
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 80px);
+  grid-gap: 10px;
+  margin: 20px auto;
+}
+
+.tile {
+  width: 80px;
+  height: 80px;
+  background: #3498db;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.3s;
+}
+
+.tile:hover {
+  background: #2980b9;
+}
+</style>
+</body>
+</html>

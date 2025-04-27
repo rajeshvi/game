@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chinese Checkers Interactive</title>
+  <style>
+    canvas {
+      background-color: #f0f0f0;
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #aaa;
+    }
+  </style>
+</head>
+<body>
+<canvas id="board" width="800" height="800"></canvas>
+<script>
+const canvas = document.getElementById("board");
+const ctx = canvas.getContext("2d");
+
+const HEX_RADIUS = 20;
+const SQRT3 = Math.sqrt(3);
+
+let board = [];
+let selectedCell = null;
+
+function hexToPixel(q, r) {
+  const x = HEX_RADIUS * SQRT3 * (q + r / 2) + 400;
+  const y = HEX_RADIUS * 1.5 * r + 100;
+  return { x, y };
+}
+
+function pixelToHex(x, y) {
+  x -= 400;
+  y -= 100;
+  const q = (x * SQRT3/3 - y / 3) / HEX_RADIUS;
+  const r = y * 2/3 / HEX_RADIUS;
+  return hexRound(q, r);
+}
+
+function hexRound(q, r) {
+  let s = -q - r;
+  let rq = Math.round(q);
+  let rr = Math.round(r);
+  let rs = Math.round(s);
+
+  const qDiff = Math.abs(rq - q);
+  const rDiff = Math.abs(rr - r);
+  const sDiff = Math.abs(rs - s);
+
+  if (qDiff > rDiff && qDiff > sDiff) rq = -rr - rs;
+  else if (rDiff > sDiff) rr = -rq - rs;
+
+  return { q: rq, r: rr };
+}
+
+function createStarBoard() {
+  const centerRange = 4;
+  board = [];
+
+  for (let q = -centerRange; q <= centerRange; q++) {
+    for (let r = -centerRange; r <= centerRange; r++) {
+      const s = -q - r;
+      if (Math.abs(s) <= centerRange) {
+        board.push({ q, r, piece: null });
+      }
+    }
+  }
+
+  const armStarts = [
+    [0, -5], [5, -5], [5, 0],
+    [0, 5], [-5, 5], [-5, 0]
+  ];
+  const armDirs = [
+    [[0, 1], [-1, 1]],
+    [[-1, 0], [-1, 1]],
+    [[-1, -1], [0, -1]],
+    [[0, -1], [1, -1]],
+    [[1, 0], [1, -1]],
+    [[1, 1], [0, 1]]
+  ];
+
+  for (let a = 0; a < 6; a++) {
+    const [baseQ, baseR] = armStarts[a];
+    const [dir1, dir2] = armDirs[a];
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col <= row; col++) {
+        const q = baseQ + dir1[0] * row + dir2[0] * col;
+        const r = baseR + dir1[1] * row + dir2[1] * col;
+        board.push({ q, r, piece: null, isArm: true, armIndex: a });
+      }
+    }
+  }
+}
+
+function placeBalls() {
+  const colors = ['red', 'blue', 'green', 'yellow', 'cyan', 'purple'];
+  board.forEach(cell => {
+    if (cell.isArm) {
+      cell.piece = colors[cell.armIndex];
+    }
+  });
+}
+
+function drawHex(x, y, color = "#ddd", piece = null, highlight = false) {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const angle = Math.PI / 3 * i;
+    const dx = x + HEX_RADIUS * Math.cos(angle);
+    const dy = y + HEX_RADIUS * Math.sin(angle);
+    if (i === 0) ctx.moveTo(dx, dy);
+    else ctx.lineTo(dx, dy);
+  }
+  ctx.closePath();
+  ctx.strokeStyle = highlight ? "#000" : "#888";
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  if (piece) {
+    ctx.beginPath();
+    ctx.arc(x, y, HEX_RADIUS * 0.6, 0, 2 * Math.PI);
+    ctx.fillStyle = piece;
+    ctx.fill();
+    ctx.strokeStyle = "#222";
+    ctx.stroke();
+  }
+}
+
+function drawBoard() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  board.forEach(cell => {
+    const { x, y } = hexToPixel(cell.q, cell.r);
+    const isSelected = selectedCell && selectedCell.q === cell.q && selectedCell.r === cell.r;
+    drawHex(x, y, "#fefefe", cell.piece, isSelected);
+  });
+}
+
+function getCell(q, r) {
+  return board.find(c => c.q === q && c.r === r);
+}
+
+canvas.addEventListener("click", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const { q, r } = pixelToHex(x, y);
+  const cell = getCell(q, r);
+
+  if (!cell) return;
+
+  if (selectedCell) {
+    // Try to move
+    if (!cell.piece) {
+      cell.piece = selectedCell.piece;
+      selectedCell.piece = null;
+      selectedCell = null;
+    } else {
+      selectedCell = cell.piece ? cell : null;
+    }
+  } else {
+    if (cell.piece) {
+      selectedCell = cell;
+    }
+  }
+
+  drawBoard();
+});
+
+// Init
+createStarBoard();
+placeBalls();
+drawBoard();
+</script>
+</body>
+</html>

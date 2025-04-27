@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chessboard</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .square {
+      width: 50px; /* Adjust as needed */
+      height: 50px; /* Adjust as needed */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 30px; /* Adjust for piece size */
+    }
+  </style>
+</head>
+<body>
+
+  <div class="chessboard">
+    <div class="square black">&#9820;</div> <div class="square white">&#9822;</div> <div class="square black">&#9821;</div> <div class="square white">&#9819;</div> <div class="square black">&#9818;</div> <div class="square white">&#9821;</div> <div class="square black">&#9822;</div> <div class="square white">&#9820;</div> <div class="square white">&#9823;</div> <div class="square black">&#9823;</div> <div class="square white">&#9823;</div> <div class="square black">&#9823;</div> <div class="square white">&#9823;</div> <div class="square black">&#9823;</div> <div class="square white">&#9823;</div> <div class="square black">&#9823;</div> <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+
+    <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+    <div class="square white"></div>
+    <div class="square black"></div>
+
+    <div class="square black">&#9817;</div> <div class="square white">&#9817;</div> <div class="square black">&#9817;</div> <div class="square white">&#9817;</div> <div class="square black">&#9817;</div> <div class="square white">&#9817;</div> <div class="square black">&#9817;</div> <div class="square white">&#9817;</div> <div class="square white">&#9814;</div> <div class="square black">&#9816;</div> <div class="square white">&#9815;</div> <div class="square black">&#9813;</div> <div class="square white">&#9812;</div> <div class="square black">&#9815;</div> <div class="square white">&#9816;</div> <div class="square black">&#9814;</div> </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/1.0.0/chess.min.js"></script>
+  <script src="script.js"></script>
+<script>
+const squares = document.querySelectorAll('.square');
+let draggedPiece = null;
+let startSquare = null;
+const boardState = {}; // Object to store the current piece positions (e.g., 'a1': '&#9814;', 'b1': '&#9816;', ...)
+let currentPlayer = 'white'; // Or 'black'
+
+// Initialize board state from HTML (you might have a more robust way to do this)
+function initializeBoardState() {
+  squares.forEach(square => {
+    const row = square.dataset.row;
+    const col = square.dataset.col;
+    const piece = square.textContent.trim();
+    if (piece) {
+      boardState[`${String.fromCharCode(97 + parseInt(col))}${8 - parseInt(row)}`] = piece;
+    } else {
+      boardState[`${String.fromCharCode(97 + parseInt(col))}${8 - parseInt(row)}`] = null;
+    }
+  });
+}
+
+// Basic function to get piece type and color from Unicode (you'll need to expand this)
+function getPieceInfo(unicode) {
+  const whitePieces = {'&#9817;': 'pawn', '&#9814;': 'rook', '&#9816;': 'knight', '&#9815;': 'bishop', '&#9813;': 'queen', '&#9812;': 'king'};
+  const blackPieces = {'&#9823;': 'pawn', '&#9820;': 'rook', '&#9822;': 'knight', '&#9821;': 'bishop', '&#9819;': 'queen', '&#9818;': 'king'};
+  if (whitePieces[unicode]) return { color: 'white', type: whitePieces[unicode] };
+  if (blackPieces[unicode]) return { color: 'black', type: blackPieces[unicode] };
+  return null;
+}
+
+// Example Usage:
+ initialBoard = [
+  ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR'],
+  ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
+  ['--', '--', '--', '--', '--', '--', '--', '--'],
+  ['--', '--', '--', '--', '--', '--', '--', '--'],
+  ['--', '--', '--', '--', '--', '--', '--', '--'],
+  ['--', '--', '--', '--', '--', '--', '--', '--'],
+  ['bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP', 'bP'],
+  ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR']
+];
+
+chess={
+'bP':'&#9823',
+'bR':'&#9820',
+'bN':'&#9822',
+'bB':'&#9821',
+'bQ':'&#9819',
+'bK':'&#9818',
+'wP':'&#9817',
+'wR':'&#9814',
+'wN':'&#9816',
+'wB':'&#9815',
+'wQ':'&#9813',
+'wK':'&#9812',
+'--':''
+}
+
+var pawnEvalWhite =
+    [
+        [0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+        [5.0,  5.0,  5.0,  5.0,  5.0,  5.0,  5.0,  5.0],
+        [1.0,  1.0,  2.0,  3.0,  3.0,  2.0,  1.0,  1.0],
+        [0.5,  0.5,  1.0,  2.5,  2.5,  1.0,  0.5,  0.5],
+        [0.0,  0.0,  0.0,  2.0,  2.0,  0.0,  0.0,  0.0],
+        [0.5, -0.5, -1.0,  0.0,  0.0, -1.0, -0.5,  0.5],
+        [0.5,  1.0, 1.0,  -2.0, -2.0,  1.0,  1.0,  0.5],
+        [0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0]
+    ];
+
+var pawnEvalBlack = reverseArray(pawnEvalWhite);
+
+var knightEval =
+    [
+        [-5.0, -4.0, -3.0, -3.0, -3.0, -3.0, -4.0, -5.0],
+        [-4.0, -2.0,  0.0,  0.0,  0.0,  0.0, -2.0, -4.0],
+        [-3.0,  0.0,  1.0,  1.5,  1.5,  1.0,  0.0, -3.0],
+        [-3.0,  0.5,  1.5,  2.0,  2.0,  1.5,  0.5, -3.0],
+        [-3.0,  0.0,  1.5,  2.0,  2.0,  1.5,  0.0, -3.0],
+        [-3.0,  0.5,  1.0,  1.5,  1.5,  1.0,  0.5, -3.0],
+        [-4.0, -2.0,  0.0,  0.5,  0.5,  0.0, -2.0, -4.0],
+        [-5.0, -4.0, -3.0, -3.0, -3.0, -3.0, -4.0, -5.0]
+    ];
+
+var bishopEvalWhite = [
+    [ -2.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -2.0],
+    [ -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0],
+    [ -1.0,  0.0,  0.5,  1.0,  1.0,  0.5,  0.0, -1.0],
+    [ -1.0,  0.5,  0.5,  1.0,  1.0,  0.5,  0.5, -1.0],
+    [ -1.0,  0.0,  1.0,  1.0,  1.0,  1.0,  0.0, -1.0],
+    [ -1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0, -1.0],
+    [ -1.0,  0.5,  0.0,  0.0,  0.0,  0.0,  0.5, -1.0],
+    [ -2.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -2.0]
+];
+
+var bishopEvalBlack = reverseArray(bishopEvalWhite);
+
+var rookEvalWhite = [
+    [  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
+    [  0.5,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  0.5],
+    [ -0.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -0.5],
+    [ -0.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -0.5],
+    [ -0.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -0.5],
+    [ -0.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -0.5],
+    [ -0.5,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -0.5],
+    [  0.0,   0.0, 0.0,  0.5,  0.5,  0.0,  0.0,  0.0]
+];
+
+var rookEvalBlack = reverseArray(rookEvalWhite);
+
+var evalQueen = [
+    [ -2.0, -1.0, -1.0, -0.5, -0.5, -1.0, -1.0, -2.0],
+    [ -1.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0, -1.0],
+    [ -1.0,  0.0,  0.5,  0.5,  0.5,  0.5,  0.0, -1.0],
+    [ -0.5,  0.0,  0.5,  0.5,  0.5,  0.5,  0.0, -0.5],
+    [  0.0,  0.0,  0.5,  0.5,  0.5,  0.5,  0.0, -0.5],
+    [ -1.0,  0.5,  0.5,  0.5,  0.5,  0.5,  0.0, -1.0],
+    [ -1.0,  0.0,  0.5,  0.0,  0.0,  0.0,  0.0, -1.0],
+    [ -2.0, -1.0, -1.0, -0.5, -0.5, -1.0, -1.0, -2.0]
+];
+
+var kingEvalWhite = [
+
+    [ -3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+    [ -3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+    [ -3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+    [ -3.0, -4.0, -4.0, -5.0, -5.0, -4.0, -4.0, -3.0],
+    [ -2.0, -3.0, -3.0, -4.0, -4.0, -3.0, -3.0, -2.0],
+    [ -1.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -1.0],
+    [  2.0,  2.0,  0.0,  0.0,  0.0,  0.0,  2.0,  2.0 ],
+    [  2.0,  3.0,  1.0,  0.0,  0.0,  1.0,  3.0,  2.0 ]
+];
+
+var kingEvalBlack = reverseArray(kingEvalWhite);
+
+function reverseArray (array) {
+    return array.slice().reverse();
+};
+
+$().ready(function(){
+count=0
+t=""
+previousrow=0
+previouscolumn=0
+
+const game = new MiniChessGame(initialBoard, 'w');
+
+display()
+
+$(".square").click(function(){
+if(count==0)
+{
+t=$(this).text()/*
+$(this).text("")*/
+previousrow=parseInt($(this).index()/8)
+previouscolumn=$(this).index()%8
+}
+if(count==1)
+{/*
+$(this).text(t)*/
+initialBoard[parseInt($(this).index()/8)][$(this).index()%8]=initialBoard[previousrow][previouscolumn]
+initialBoard[previousrow][previouscolumn]='--'
+
+display()
+const bestMove = game.findBestMove(1); // Search depth of 3
+// You would then need to apply this 'bestMove' to your actual game
+initialBoard[bestMove.to[0]][bestMove.to[1]]=initialBoard[bestMove.from[0]][bestMove.from[1]]
+initialBoard[bestMove.from[0]][bestMove.from[1]]='--'
+
+display()
+
+/*
+$(".square").eq(bestMove.to[0]*8+bestMove.to[1]).html($(".square").eq(bestMove.from[0]*8+bestMove.from[1]).html())
+$(".square").eq(bestMove.from[0]*8+bestMove.from[1]).html("")*/
+}
+count=1-count
+return
+})
+
+function display(){
+$(".square").each(function(index,element){
+$(this).html(chess[initialBoard[parseInt(index/8)][index%8]])
+})
+}
+
+})
+
+var getPieceValue = function (piece, x, y) {
+    if (piece === null) {
+        return 0;
+    }
+    var getAbsoluteValue = function (piece, isWhite, x ,y) {
+        if (piece.type === 'p') {
+            return 10 + ( isWhite ? pawnEvalWhite[y][x] : pawnEvalBlack[y][x] );
+        } else if (piece.type === 'r') {
+            return 50 + ( isWhite ? rookEvalWhite[y][x] : rookEvalBlack[y][x] );
+        } else if (piece.type === 'n') {
+            return 30 + knightEval[y][x];
+        } else if (piece.type === 'b') {
+            return 30 + ( isWhite ? bishopEvalWhite[y][x] : bishopEvalBlack[y][x] );
+        } else if (piece.type === 'q') {
+            return 90 + evalQueen[y][x];
+        } else if (piece.type === 'k') {
+            return 900 + ( isWhite ? kingEvalWhite[y][x] : kingEvalBlack[y][x] );
+        }
+        throw "Unknown piece type: " + piece.type;
+    };
+
+    var absoluteValue = getAbsoluteValue(piece, piece.color === 'w', x ,y);
+    return piece.color === 'w' ? absoluteValue : -absoluteValue;
+};
+
+class MiniChessGame {
+  constructor(boardState, currentPlayer) {
+    this.board = boardState; // 2D array, e.g., [['wK', 'wP', '--', '--'], ...]
+    this.currentPlayer = currentPlayer; // 'w' (white) or 'b' (black)
+    this.boardSize = boardState.length;
+  }
+
+  getPossibleMoves(player) {
+    const moves = [];
+    const playerPieces = this.findPieces(player);
+
+    for (const [row, col] of playerPieces) {
+      const piece = this.board[row][col];
+      if (piece.includes('K')) {
+  moves.push(...this.getKingMoves(row, col, player));
+} else if (piece.includes('Q')) {
+  moves.push(...this.getQueenMoves(row, col, player));
+} else if (piece.includes('R')) {
+  moves.push(...this.getRookMoves(row, col, player));
+} else if (piece.includes('B')) {
+  moves.push(...this.getBishopMoves(row, col, player));
+} else if (piece.includes('N')) {
+  moves.push(...this.getKnightMoves(row, col, player));
+} else if (piece.includes('P')) {
+  moves.push(...this.getPawnMoves(row, col, player));
+}
+      
+    }
+    return moves;
+  }
+
+  getKingMoves(row, col, player) {
+    const possibleMoves = [];
+    const directions = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+
+    for (const [dr, dc] of directions) {
+      const newRow = row + dr;
+      const newCol = col + dc;
+
+      if (this.isValidPosition(newRow, newCol) && !this.isSameColor(newRow, newCol, player)) {
+        possibleMoves.push({ from: [row, col], to: [newRow, newCol] });
+      }
+    }
+    return possibleMoves;
+  }
+
+  getPawnMoves(row, col, player) {
+    const possibleMoves = [];
+    const direction = player === 'w' ? -1 : 1;
+    const startRow = player === 'w' ? this.boardSize - 2 : 1; // Assuming pawns start on the second rank
+
+    // One step forward
+    let newRow = row + direction;
+    if (this.isValidPosition(newRow, col) && this.board[newRow][col] === '--') {
+      possibleMoves.push({ from: [row, col], to: [newRow, col] });
+      // Two steps forward from start
+      if (row === startRow && (newRow + direction) >= 0 && (newRow + direction) < this.boardSize && this.board[newRow + direction][col] === '--') {
+        possibleMoves.push({ from: [row, col], to: [newRow + direction, col] });
+      }
+    }
+
+    // Capture diagonally
+    const captureDirections = [[direction, -1], [direction, 1]];
+    for (const [dr, dc] of captureDirections) {
+      const captureRow = row + dr;
+      const captureCol = col + dc;
+      if (this.isValidPosition(captureRow, captureCol) && this.isOpponentColor(captureRow, captureCol, player)) {
+        possibleMoves.push({ from: [row, col], to: [captureRow, captureCol] });
+      }
+    }
+
+    // Promotion (simplified: promote to Queen upon reaching the other side)
+    if ((player === 'w' && newRow === 0) || (player === 'b' && newRow === this.boardSize - 1)) {
+      const promotingMoves = possibleMoves.filter(move => move.to[0] === newRow);
+      promotingMoves.forEach(move => move.promotion = true); // Mark for promotion
+    }
+
+    return possibleMoves;
+  }
+
+getRookMoves(row, col, player) {
+  return this.getSlidingMoves(row, col, player, [[1,0],[0,1],[-1,0],[0,-1]]);
+}
+
+getBishopMoves(row, col, player) {
+  return this.getSlidingMoves(row, col, player, [[1,1],[1,-1],[-1,1],[-1,-1]]);
+}
+
+getQueenMoves(row, col, player) {
+  return this.getSlidingMoves(row, col, player, [[1,0],[0,1],[-1,0],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]);
+}
+
+getKnightMoves(row, col, player) {
+  const moves = [];
+  const offsets = [
+    [2, 1], [1, 2], [-1, 2], [-2, 1],
+    [-2, -1], [-1, -2], [1, -2], [2, -1]
+  ];
+  for (const [dr, dc] of offsets) {
+    const newRow = row + dr;
+    const newCol = col + dc;
+    if (this.isValidPosition(newRow, newCol) && !this.isSameColor(newRow, newCol, player)) {
+      moves.push({ from: [row, col], to: [newRow, newCol] });
+    }
+  }
+  return moves;
+}
+
+getSlidingMoves(row, col, player, directions) {
+  const moves = [];
+  for (const [dr, dc] of directions) {
+    let r = row + dr;
+    let c = col + dc;
+    while (this.isValidPosition(r, c)) {
+      if (this.board[r][c] === '--') {
+        moves.push({ from: [row, col], to: [r, c] });
+      } else if (this.isOpponentColor(r, c, player)) {
+        moves.push({ from: [row, col], to: [r, c] });
+        break;
+      } else {
+        break;
+      }
+      r += dr;
+      c += dc;
+    }
+  }
+  return moves;
+}
+
+  isValidPosition(row, col) {
+    return row >= 0 && row < this.boardSize && col >= 0 && col < this.boardSize;
+  }
+
+  isSameColor(row, col, player) {
+    const piece = this.board[row][col];
+    return piece !== '--' && piece.startsWith(player);
+  }
+
+  isOpponentColor(row, col, player) {
+    const piece = this.board[row][col];
+    return piece !== '--' && !piece.startsWith(player);
+  }
+
+  findPieces(player) {
+    const pieces = [];
+    for (let i = 0; i < this.boardSize; i++) {
+      for (let j = 0; j < this.boardSize; j++) {
+        if (this.board[i][j].startsWith(player)) {
+          pieces.push([i, j]);
+        }
+      }
+    }
+    return pieces;
+  }
+
+  evaluateBoard() {
+    // Very basic evaluation: material advantage and pawn advancement
+    let score = 0;
+    for (let i = 0; i < this.boardSize; i++) {
+      for (let j = 0; j < this.boardSize; j++) {
+        const piece = this.board[i][j];
+        if (piece === 'wK') score += 100;
+        else if (piece === 'bK') score -= 100;
+        else if (piece === 'wP') score += (this.boardSize - 1 - i); // Encourage pawn advancement
+        else if (piece === 'bP') score -= i;
+else if (piece === 'wQ') score += 9;
+else if (piece === 'bQ') score -= 9;
+else if (piece === 'wR') score += 5;
+else if (piece === 'bR') score -= 5;
+else if (piece === 'wB') score += 3;
+else if (piece === 'bB') score -= 3;
+else if (piece === 'wN') score += 3;
+else if (piece === 'bN') score -= 3;
+      }
+    }
+    return score;
+  }
+
+  isGameOver() {
+    // Simplified game over condition: King captured (very basic)
+    let whiteKingPresent = false;
+    let blackKingPresent = false;
+    for (let i = 0; i < this.boardSize; i++) {
+      if (this.board[i].includes('wK')) whiteKingPresent = true;
+      if (this.board[i].includes('bK')) blackKingPresent = true;
+    }
+    return !whiteKingPresent || !blackKingPresent;
+  }
+
+  minimax(depth, alpha, beta, maximizingPlayer) {
+  if (depth === 0 || this.isGameOver()) {
+    return this.evaluateBoard();
+  }
+
+  const currentPlayer = maximizingPlayer ? this.currentPlayer : this.getOpponent(this.currentPlayer);
+  const moves = this.getPossibleMoves(currentPlayer);
+
+  if (maximizingPlayer) {
+    let maxEval = -Infinity;
+    for (const move of moves) {
+      const nextState = this.makeMove(move); // Should return a cloned state
+      const eval1 = nextState.minimax(depth - 1, alpha, beta, false);
+      maxEval = Math.max(maxEval, eval1);
+      alpha = Math.max(alpha, eval1);
+      if (beta <= alpha) break; // Beta cut-off
+    }
+    return maxEval;
+  } else {
+    let minEval = Infinity;
+    for (const move of moves) {
+      const nextState = this.makeMove(move);
+      const eval1 = nextState.minimax(depth - 1, alpha, beta, true);
+      minEval = Math.min(minEval, eval1);
+      beta = Math.min(beta, eval1);
+      if (beta <= alpha) break; // Alpha cut-off
+    }
+    return minEval;
+  }
+}
+
+  findBestMove(depth = 2) {
+  let bestEval = -Infinity;
+  let bestMove = null;
+  const moves = this.getPossibleMoves(this.currentPlayer);
+
+  for (const move of moves) {
+    const newGame = this.makeMove(move);
+    const evalScore = newGame.minimax(depth - 1, -Infinity, Infinity, false);
+    if (evalScore > bestEval) {
+      bestEval = evalScore;
+      bestMove = move;
+    }
+  }
+
+  return bestMove;
+}
+
+makeMove(move) {
+  const newGame = this.clone();
+  const { from, to } = move;
+  newGame.board[to[1]][to[0]] = newGame.board[from[1]][from[0]];
+  newGame.board[from[1]][from[0]] = null;
+  newGame.currentPlayer = this.getOpponent(this.currentPlayer);
+  return newGame;
+}
+
+clone() {
+  const newGame = new MiniChessGame(initialBoard,'b')
+  newGame.board = this.board.map(row => row.slice());
+  newGame.currentPlayer = this.currentPlayer;
+  return newGame;
+}
+
+  getOpponent(player) {
+    return player === 'w' ? 'b' : 'w';
+  }
+}
+
+
+
+ 
+
+
+function handleDragStart(event) {
+  draggedPiece = event.target;
+  startSquare = draggedPiece.parentNode;
+  draggedPiece.classList.add('dragging'); // Optional visual cue
+  // You would need your game logic here to determine valid moves
+  // based on the piece and its position.
+  const row = parseInt(startSquare.dataset.row);
+  const col = parseInt(startSquare.dataset.col);
+  const pieceUnicode = draggedPiece.textContent.trim();
+  const pieceInfo = getPieceInfo(pieceUnicode);
+
+  if (pieceInfo && pieceInfo.color === currentPlayer) {
+    // Get valid moves for this piece from your game logic
+    const validMoves = getValidMoves(row, col, pieceInfo, boardState);
+    // Highlight valid moves (you'll need to implement this visually)
+    highlightSquares(validMoves);
+  } else {
+    draggedPiece = null; // Prevent dragging if not current player's turn
+  }
+}
+
+function handleDragOver(event) {
+  event.preventDefault(); // Allows dropping
+}
+
+function handleDrop(event) {
+  if (!draggedPiece) return;
+
+  const targetSquare = event.target.classList.contains('square') ? event.target : event.target.parentNode; // Handle clicks on pieces within squares
+
+  if (targetSquare && targetSquare.classList.contains('square') && targetSquare !== startSquare) {
+    const endRow = parseInt(targetSquare.dataset.row);
+    const endCol = parseInt(targetSquare.dataset.col);
+    const startRow = parseInt(startSquare.dataset.row);
+    const startCol = parseInt(startSquare.dataset.col);
+    const pieceUnicode = draggedPiece.textContent.trim();
+    const pieceInfo = getPieceInfo(pieceUnicode);
+
+    // Check if the move is valid according to your game rules
+    const isValidMove = checkIfMoveIsValid(startRow, startCol, endRow, endCol, pieceInfo, boardState, currentPlayer);
+
+    if (isValidMove) {
+      // Move the piece
+      if (targetSquare.firstChild) {
+        targetSquare.removeChild(targetSquare.firstChild); // Capture piece
+      }
+      targetSquare.appendChild(draggedPiece);
+
+      // Update board state
+      const startPos = `${String.fromCharCode(97 + startCol)}${8 - startRow}`;
+      const endPos = `${String.fromCharCode(97 + endCol)}${8 - endRow}`;
+      boardState[endPos] = pieceUnicode;
+      boardState[startPos] = null;
+
+      // Switch player
+      currentPlayer = currentPlayer === 'white' ? 'black' : 'white';
+      console.log(`Current Player: ${currentPlayer}`);
+
+      // You'll need to handle special moves, check for check/checkmate here
+
+    } else {
+      // Invalid move, return piece to start
+      startSquare.appendChild(draggedPiece);
+    }
+  } else if (targetSquare === startSquare) {
+    // Dropped back on the same square, do nothing
+  }
+
+  draggedPiece.classList.remove('dragging');
+  removeHighlighting(); // Implement this function
+  draggedPiece = null;
+  startSquare = null;
+}
+
+function handleDragEnd(event) {
+  if (draggedPiece) {
+    draggedPiece.classList.remove('dragging');
+  }
+  removeHighlighting();
+  draggedPiece = null;
+  startSquare = null;
+}
+
+// Attach event listeners
+squares.forEach(square => {
+  square.addEventListener('dragover', handleDragOver);
+  square.addEventListener('drop', handleDrop);
+});
+
+// Attach dragstart to the pieces (you might need to select them differently)
+document.querySelectorAll('.square > *').forEach(piece => {
+  piece.setAttribute('draggable', true);
+  piece.addEventListener('dragstart', handleDragStart);
+  piece.addEventListener('dragend', handleDragEnd);
+});
+
+// --- Placeholder functions ---
+
+function getValidMoves(row, col, pieceInfo, board) {
+  // This function would use your chess rules logic
+  // to return an array of valid { row, col } for the piece.
+  console.log(`Getting valid moves for ${pieceInfo.color} ${pieceInfo.type} at ${row}, ${col}`);
+  return []; // Replace with actual logic
+}
+
+function checkIfMoveIsValid(startRow, startCol, endRow, endCol, pieceInfo, board, player) {
+  // This function would use your chess rules logic
+  // to check if the move from start to end is valid for the piece.
+  console.log(`Checking if move is valid: ${startRow},${startCol} to ${endRow},${endCol} for ${pieceInfo.color} ${pieceInfo.type}`);
+  return true; // Replace with actual logic
+}
+
+function highlightSquares(validMoves) {
+  // Implement visual highlighting of the squares in the validMoves array
+  squares.forEach(square => {
+    const row = parseInt(square.dataset.row);
+    const col = parseInt(square.dataset.col);
+    const isMoveValid = validMoves.some(move => move.row === row && move.col === col);
+    square.classList.toggle('valid-move', isMoveValid);
+  });
+}
+
+function removeHighlighting() {
+  squares.forEach(square => {
+    square.classList.remove('valid-move');
+  });
+}
+
+// Initialize the board state when the script loads
+initializeBoardState();
+console.log("Initial Board State:", boardState);
+</script>
+<style>
+.chessboard {
+  width: 400px; /* Adjust as needed */
+  height: 400px; /* Adjust as needed */
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  border: 2px solid black;
+}
+
+.square {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px; /* For potential piece representation as text */
+}
+
+.white {
+  background-color: #f0d9b5; /* Light square color */
+}
+
+.black {
+  background-color: #b58863; /* Dark square color */
+}
+
+.piece {
+  font-size: 36px;
+  user-select: none; /* Prevent text selection on drag */
+}
+
+</style>
+</body>
+</html>

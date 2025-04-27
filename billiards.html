@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Billiards Game</title>
+  <style>
+    body {
+      background: #222;
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      background: #006400; /* Green table */
+      margin: 20px auto;
+      border: 10px solid #654321;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="billiards" width="800" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById('billiards');
+const ctx = canvas.getContext('2d');
+
+const balls = [];
+const ballRadius = 10;
+const friction = 0.98;
+let dragging = false;
+let selectedBall = null;
+let mouseStart = { x: 0, y: 0 };
+
+// Create balls
+function createBall(x, y, color) {
+  return {
+    x: x,
+    y: y,
+    vx: 0,
+    vy: 0,
+    color: color
+  };
+}
+
+// Setup table
+balls.push(createBall(100, 200, 'white')); // Cue ball
+balls.push(createBall(500, 200, 'red'));
+balls.push(createBall(530, 185, 'yellow'));
+balls.push(createBall(530, 215, 'blue'));
+
+function drawBall(ball) {
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+  ctx.fillStyle = ball.color;
+  ctx.fill();
+  ctx.strokeStyle = 'black';
+  ctx.stroke();
+}
+
+count=0
+
+canvas.addEventListener('click', (e) => {
+alert()
+if(count==0)
+{
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  const cueBall = balls[0];
+  const dx = mouseX - cueBall.x;
+  const dy = mouseY - cueBall.y;
+  if (Math.sqrt(dx * dx + dy * dy) < ballRadius) {
+    dragging = true;
+    selectedBall = cueBall;
+    mouseStart = { x: mouseX, y: mouseY };
+  }
+}
+if(count==1)
+{
+if (dragging && selectedBall) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    selectedBall.vx = (mouseStart.x - mouseX) * 0.2;
+    selectedBall.vy = (mouseStart.y - mouseY) * 0.2;
+  }
+  dragging = false;
+  selectedBall = null;
+}
+count=1-count
+return
+});
+
+// Handle mouse
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  const cueBall = balls[0];
+  const dx = mouseX - cueBall.x;
+  const dy = mouseY - cueBall.y;
+  if (Math.sqrt(dx * dx + dy * dy) < ballRadius) {
+    dragging = true;
+    selectedBall = cueBall;
+    mouseStart = { x: mouseX, y: mouseY };
+  }
+});
+
+canvas.addEventListener('mouseup', (e) => {
+  if (dragging && selectedBall) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    selectedBall.vx = (mouseStart.x - mouseX) * 0.2;
+    selectedBall.vy = (mouseStart.y - mouseY) * 0.2;
+  }
+  dragging = false;
+  selectedBall = null;
+});
+
+function updateBalls() {
+  for (let ball of balls) {
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    // Apply friction
+    ball.vx *= friction;
+    ball.vy *= friction;
+
+    // Bounce off walls
+    if (ball.x < ballRadius || ball.x > canvas.width - ballRadius) {
+      ball.vx *= -1;
+      ball.x = Math.max(ballRadius, Math.min(ball.x, canvas.width - ballRadius));
+    }
+    if (ball.y < ballRadius || ball.y > canvas.height - ballRadius) {
+      ball.vy *= -1;
+      ball.y = Math.max(ballRadius, Math.min(ball.y, canvas.height - ballRadius));
+    }
+  }
+}
+
+// Main loop
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  updateBalls();
+
+  for (let ball of balls) {
+    drawBall(ball);
+  }
+
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>

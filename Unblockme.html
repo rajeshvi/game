@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Unblock Me</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Unblock Me</h1>
+  <div id="gameBoard"></div>
+  <script src="script.js"></script>
+<script>
+const board = document.getElementById("gameBoard");
+
+const blocks = [
+  { id: 'red', x: 0, y: 2, w: 2, h: 1, color: 'red', dir: 'x' }, // Goal block
+  { id: 'b1', x: 0, y: 0, w: 3, h: 1, color: 'gray', dir: 'x' },
+  { id: 'b2', x: 3, y: 0, w: 1, h: 2, color: 'gray', dir: 'y' },
+  { id: 'b3', x: 4, y: 2, w: 2, h: 1, color: 'gray', dir: 'x' },
+  { id: 'b4', x: 3, y: 4, w: 1, h: 2, color: 'gray', dir: 'y' }
+];
+
+function createBlock(block) {
+  const el = document.createElement('div');
+  el.className = `block ${block.color}`;
+  el.style.width = `${block.w * 60 + (block.w - 1) * 2}px`;
+  el.style.height = `${block.h * 60 + (block.h - 1) * 2}px`;
+  el.style.left = `${block.x * 62}px`;
+  el.style.top = `${block.y * 62}px`;
+  el.dataset.id = block.id;
+  el.dataset.dir = block.dir;
+  el.draggable = true;
+
+  el.addEventListener('dragstart', e => {
+    e.dataTransfer.setData("text/plain", block.id);
+  });
+
+  board.appendChild(el);
+}
+
+function getBlockById(id) {
+  return blocks.find(b => b.id === id);
+}
+
+function isCollision(x, y, w, h, ignoreId = null) {
+  return blocks.some(b => {
+    if (b.id === ignoreId) return false;
+    return !(x + w <= b.x || b.x + b.w <= x || y + h <= b.y || b.y + b.h <= y);
+  });
+}
+
+function moveBlock(id, dx, dy) {
+  const b = getBlockById(id);
+  const newX = b.x + dx;
+  const newY = b.y + dy;
+  if (
+    newX >= 0 && newY >= 0 &&
+    newX + b.w <= 6 && newY + b.h <= 6 &&
+    !isCollision(newX, newY, b.w, b.h, b.id)
+  ) {
+    b.x = newX;
+    b.y = newY;
+    updateBoard();
+    if (b.id === 'red' && b.x + b.w === 6 && b.y === 2) {
+      setTimeout(() => alert("You win!"), 100);
+    }
+  }
+}
+
+function updateBoard() {
+  blocks.forEach(block => {
+    const el = document.querySelector(`[data-id="${block.id}"]`);
+    el.style.left = `${block.x * 62}px`;
+    el.style.top = `${block.y * 62}px`;
+  });
+}
+
+board.addEventListener("click", function (e) {
+  const el = e.target.closest('.block');
+  if (!el) return;
+  const block = getBlockById(el.dataset.id);
+  if (block.dir === 'x') {
+    moveBlock(block.id, 1, 0) || moveBlock(block.id, -1, 0);
+  } else {
+    moveBlock(block.id, 0, 1) || moveBlock(block.id, 0, -1);
+  }
+});
+
+blocks.forEach(createBlock);
+</script>
+<style>
+body {
+  font-family: sans-serif;
+  background: #eee;
+  text-align: center;
+}
+
+#gameBoard {
+  width: 360px;
+  height: 360px;
+  display: grid;
+  grid-template-columns: repeat(6, 60px);
+  grid-template-rows: repeat(6, 60px);
+  gap: 2px;
+  margin: 20px auto;
+  position: relative;
+  background: #ccc;
+}
+
+.block {
+  position: absolute;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.red {
+  background: crimson;
+}
+
+.gray {
+  background: #999;
+}
+</style>
+</body>
+</html>

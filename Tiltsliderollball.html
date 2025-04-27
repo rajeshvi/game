@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tilt Slide Ball</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Tilt & Slide Ball Game</h1>
+  <div id="gameContainer">
+    <div id="ball"></div>
+  </div>
+  <p>Use device tilt or arrow keys to roll the ball</p>
+  <script src="script.js"></script>
+<script>
+const ball = document.getElementById("ball");
+const container = document.getElementById("gameContainer");
+
+let x = 135;
+let y = 135;
+const speed = 2;
+const size = 30;
+const max = 300 - size;
+
+function updateBall() {
+  ball.style.left = `${x}px`;
+  ball.style.top = `${y}px`;
+}
+
+function clamp(val) {
+  return Math.max(0, Math.min(val, max));
+}
+
+window.addEventListener("deviceorientation", function (event) {
+  // Tilt: gamma = left/right, beta = forward/backward
+  x += event.gamma * 0.1;
+  y += event.beta * 0.1;
+  x = clamp(x);
+  y = clamp(y);
+  updateBall();
+}, true);
+
+window.addEventListener("keydown", function (e) {
+  switch (e.key) {
+    case "ArrowUp": y -= speed; break;
+    case "ArrowDown": y += speed; break;
+    case "ArrowLeft": x -= speed; break;
+    case "ArrowRight": x += speed; break;
+  }
+  x = clamp(x);
+  y = clamp(y);
+  updateBall();
+});
+
+updateBall();
+</script>
+<style>
+body {
+  font-family: sans-serif;
+  text-align: center;
+  background: #e0f7fa;
+  margin: 0;
+}
+
+#gameContainer {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  margin: 20px auto;
+  background: #f0f0f0;
+  border: 3px solid #00796b;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#ball {
+  width: 30px;
+  height: 30px;
+  background: red;
+  border-radius: 50%;
+  position: absolute;
+  top: 135px;
+  left: 135px;
+}
+</style>
+</body>
+</html>
